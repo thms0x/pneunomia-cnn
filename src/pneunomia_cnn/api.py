@@ -1,6 +1,6 @@
 import torch 
 from fastapi import FastAPI, UploadFile, HTTPException
-from torchvision.io import read_image, ImageReadMode
+from torchvision.io import decode_image, ImageReadMode
 from torchvision.transforms import v2
 
 from pneunomia_cnn.model import CNN
