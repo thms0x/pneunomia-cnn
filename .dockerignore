@@ -1,0 +1,9 @@
+.git
+.venv
+data
+mlartifacts
+mlflow.db
+__pycache__
+*.pyc
+*.pt
+!models/model.pt
