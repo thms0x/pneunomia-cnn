@@ -9,8 +9,11 @@ wheels/
 # Virtual environments
 .venv
 
-# Trainings data
+# Training data
 data/
 
-#Model
-*.ptmlflow.db
+# Local MLflow runs and checkpoints
+mlflow.db
+mlartifacts/
+*.pt
+!models/model.pt
