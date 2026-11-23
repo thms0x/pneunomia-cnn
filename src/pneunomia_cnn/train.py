@@ -120,6 +120,7 @@ def train():
                 step=epoch,
             )
 
+        tune_threshold(model, val_loader, device)
         torch.save(model.state_dict(), "models/model.pt")
         mlflow.log_artifact(
             "models/model.pt"
@@ -175,7 +176,41 @@ def validate(model, loader, criterion, device):
     }
 
     
+@torch.inference_mode()
+def tune_threshold(model, val_loader, device):
+    model.eval()
+    scores, labels = [], []
 
+    for images, targets in val_loader:
+        scores.append(torch.sigmoid(model(images.to(device)).squeeze(1)).cpu())
+        labels.append(targets.bool().cpu())
+
+    scores = torch.cat(scores)
+    labels = torch.cat(labels)
+    thresholds = torch.arange(1, 100) / 100  # 0.01 ... 0.99
+
+    predicted = scores[None, :] >= thresholds[:, None]
+    positive = labels[None, :]
+    recall = (predicted & positive).sum(1).float() / positive.sum()
+    specificity = (~predicted & ~positive).sum(1).float() / (~positive).sum()
+    balanced_accuracy = (recall + specificity) / 2
+
+    best = balanced_accuracy.argmax().item()
+    threshold = thresholds[best].item()
+
+    mlflow.log_table({
+        "threshold": thresholds.tolist(),
+        "balanced_accuracy": balanced_accuracy.tolist(),
+        "recall": recall.tolist(),
+        "specificity": specificity.tolist(),
+    }, "validation_thresholds.json")
+    mlflow.log_param("decision_threshold", round(threshold, 2))
+    mlflow.log_metrics({
+        "val_balanced_accuracy_tuned": balanced_accuracy[best].item(),
+        "val_recall_tuned": recall[best].item(),
+        "val_specificity_tuned": specificity[best].item(),
+    })
+    return threshold
 
 if __name__ == "__main__":
     train()

@@ -49,7 +49,7 @@ def evaluate():
 
             logits = model(images).squeeze(1)
             probs = torch.sigmoid(logits)
-            predictions = (probs >= 0.5).float()
+            predictions = (probs >= 0.74).float()
             correct_count += (predictions == labels).sum().item()
             wrong_count += (predictions != labels).sum().item()
             total += labels.size(0)
